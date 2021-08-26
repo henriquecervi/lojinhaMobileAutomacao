@@ -1,12 +1,11 @@
 package modulos.produto;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import telas.LoginTela;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -15,9 +14,10 @@ import java.util.concurrent.TimeUnit;
 @DisplayName("Testes Mobile do Módulo de Produto")
 public class ProdutoTest {
 
-    @DisplayName("Validação do valor de produto não permitido")
-    @Test
-    public void testValidacaoDoValorDeProdutoNaoPermitido() throws MalformedURLException {
+    private WebDriver app;
+
+    @BeforeEach
+    public void beforeEach() throws MalformedURLException {
         // abrir o app
         DesiredCapabilities capacidades = new DesiredCapabilities();
         capacidades.setCapability("deviceName", "Google Pixel 3");
@@ -27,43 +27,31 @@ public class ProdutoTest {
         capacidades.setCapability("appActivity","com.lojinha.ui.MainActivity");
         capacidades.setCapability("app","Z:\\Estudos\\TSPI\\Módulo 11 - Android\\Lojinha Nativa\\lojinha-nativa.apk");
 
-        WebDriver app = new RemoteWebDriver(new URL("http://127.0.0.1:4723/wd/hub"), capacidades);
-        app.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+        this.app = new RemoteWebDriver(new URL("http://127.0.0.1:4723/wd/hub"), capacidades);
+        this.app.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+    }
 
-        // fazer login
-
-        app.findElement(By.id("com.lojinha:id/user")).click();
-        app.findElement(By.id("com.lojinha:id/user")).findElement(By.id("com.lojinha:id/editText")).sendKeys("admin");
-
-        app.findElement(By.id("com.lojinha:id/password")).click();
-        app.findElement(By.id("com.lojinha:id/password")).findElement(By.id("com.lojinha:id/editText")).sendKeys("admin");
-
-        app.findElement(By.id("com.lojinha:id/button")).click();
-
-
-        // abrir formulário novo produto
-
-        app.findElement(By.id("com.lojinha:id/floatingActionButton")).click();
-
-        // cadastrar um produto com valor inválido
-
-        app.findElement(By.id("com.lojinha:id/productName")).click();
-        app.findElement(By.id("com.lojinha:id/productName")).findElement(By.id("com.lojinha:id/editText")).sendKeys("Teste Cervi");
-
-        app.findElement(By.id("com.lojinha:id/productValue")).click();
-        app.findElement(By.id("com.lojinha:id/productValue")).findElement(By.id("com.lojinha:id/editText")).sendKeys("700001");
-
-        app.findElement(By.id("com.lojinha:id/productColors")).click();
-        app.findElement(By.id("com.lojinha:id/productColors")).findElement(By.id("com.lojinha:id/editText")).sendKeys("branco,azul");
-
-        app.findElement(By.id("com.lojinha:id/saveButton")).click();
+    @DisplayName("Validação do valor de produto não permitido")
+    @Test
+    public void testValidacaoDoValorDeProdutoNaoPermitido() {
+        String mensagemApresentada = new LoginTela(app)
+                .preencherUsuario("admin")
+                .preencherSenha("admin")
+                .efetuarLogin()
+                .abrirTelaAdicaoProduto()
+                .preencherNomeProduto("Teste Cervi")
+                .preencherValorProduto("700001")
+                .preencherCoresProduto("branco,laranja")
+                .submissaoComErro()
+                .obterMensagemDeErro();
 
 
-        // validar que a mensagem de valor inválido foi apresentada
-
-        String mensagemApresentada = app.findElement(By.xpath("//android.widget.Toast")).getText();
+        // validar que a mensagem de valor inválido fora apresentada
         Assertions.assertEquals("O valor do produto deve estar entre R$ 0,01 e R$ 7.000,00", mensagemApresentada);
     }
 
-
+    @AfterEach
+    public void afterEach() {
+        app.quit();
+    }
 }
